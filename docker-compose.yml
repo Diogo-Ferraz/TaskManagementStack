@@ -1,0 +1,146 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: tm-sqlserver
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Developer"
+      MSSQL_SA_PASSWORD: ${SQL_PASSWORD:-Passw0rd!1234}
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    networks:
+      - taskmanagement-network
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -Q "SELECT 1" || exit 1
+      interval: 10s
+      retries: 10
+      start_period: 10s
+      timeout: 3s
+
+  auth-service:
+    image: ${AUTH_IMAGE:-diogopro/taskmanagement-auth:latest}
+    pull_policy: always
+    container_name: tm-auth
+    restart: unless-stopped
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__TaskManagementDbConnection: Server=sqlserver,1433;Database=TaskManagementDb;User Id=sa;Password=${SQL_PASSWORD:-Passw0rd!1234};TrustServerCertificate=True;
+      OpenIddict__Issuer: https://auth.localhost
+      OpenIddict__Audience: task_management_api_dev
+      OpenIddict__EncryptionKey: ${OPENIDDICT_ENCRYPTION_KEY:-DRjd/GnduI3Efzen9V9BvbNUfc/VKgXltV7Kbk9sMkY=}
+      ClientSettings__Clients__0__ClientId: swagger-client
+      ClientSettings__Clients__0__DisplayName: Swagger Client application
+      ClientSettings__Clients__0__RedirectUris__0: https://api.localhost/swagger/oauth2-redirect.html
+      ClientSettings__Clients__0__PostLogoutRedirectUris__0: https://api.localhost/callback/logout/local
+      ClientSettings__Clients__0__AllowedCorsOrigins__0: https://api.localhost
+      ClientSettings__Clients__0__AllowedScopes__0: api1
+      ClientSettings__Clients__1__ClientId: angular-client
+      ClientSettings__Clients__1__DisplayName: Angular Client application
+      ClientSettings__Clients__1__RedirectUris__0: https://app.localhost/callback
+      ClientSettings__Clients__1__PostLogoutRedirectUris__0: https://app.localhost
+      ClientSettings__Clients__1__AllowedCorsOrigins__0: https://app.localhost
+      ClientSettings__Clients__1__AllowedScopes__0: api1
+      SeedUsers__0__Email: demo-admin@example.com
+      SeedUsers__0__DisplayName: Demo Admin
+      SeedUsers__0__Password: ${DEMO_PASSWORD:-Demo123!}
+      SeedUsers__0__Role: Administrator
+      SeedUsers__1__Email: demo-manager@example.com
+      SeedUsers__1__DisplayName: Demo Manager
+      SeedUsers__1__Password: ${DEMO_PASSWORD:-Demo123!}
+      SeedUsers__1__Role: ProjectManager
+      SeedUsers__2__Email: demo-user@example.com
+      SeedUsers__2__DisplayName: Demo User
+      SeedUsers__2__Password: ${DEMO_PASSWORD:-Demo123!}
+      SeedUsers__2__Role: User
+    networks:
+      - taskmanagement-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 40s
+
+  api-service:
+    image: ${API_IMAGE:-diogopro/taskmanagement-api:latest}
+    pull_policy: always
+    container_name: tm-api
+    restart: unless-stopped
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__TaskManagementDbConnection: Server=sqlserver,1433;Database=TaskManagementDb;User Id=sa;Password=${SQL_PASSWORD:-Passw0rd!1234};TrustServerCertificate=True;
+      OpenIddict__Issuer: https://auth.localhost
+      OpenIddict__Audience: task_management_api_dev
+      OpenIddict__EncryptionKey: ${OPENIDDICT_ENCRYPTION_KEY:-DRjd/GnduI3Efzen9V9BvbNUfc/VKgXltV7Kbk9sMkY=}
+      AuthApi__BaseUrl: https://auth.localhost/
+      ClientSettings__AuthorizationUrl: https://auth.localhost/connect/authorize
+      ClientSettings__TokenUrl: https://auth.localhost/connect/token
+      ClientSettings__Clients__0__ClientId: swagger-client
+      ClientSettings__Clients__0__ClientSecret: ${SWAGGER_CLIENT_SECRET:-901564A5-E7FE-42CB-B10D-61EF6A8F3654}
+      ClientSettings__Clients__0__RequirePkce: true
+      ClientSettings__Clients__0__Description: OAuth2 Authorization Code Flow with PKCE
+      ClientSettings__Clients__0__Scopes__profile: Access your profile information
+      ClientSettings__Clients__0__Scopes__email: Access your email address
+      ClientSettings__Clients__0__Scopes__roles: Access your role information
+      ClientSettings__Clients__0__AllowedCorsOrigins__0: https://api.localhost
+      ClientSettings__Clients__1__ClientId: angular-client
+      ClientSettings__Clients__1__Description: Angular SPA client
+      ClientSettings__Clients__1__RequirePkce: true
+      ClientSettings__Clients__1__Scopes__profile: Access your profile information
+      ClientSettings__Clients__1__Scopes__email: Access your email address
+      ClientSettings__Clients__1__Scopes__roles: Access your role information
+      ClientSettings__Clients__1__AllowedCorsOrigins__0: https://app.localhost
+    networks:
+      - taskmanagement-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 40s
+
+  client:
+    image: ${CLIENT_IMAGE:-diogopro/taskmanagement-client:latest}
+    pull_policy: always
+    container_name: tm-client
+    restart: unless-stopped
+    networks:
+      - taskmanagement-network
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: tm-caddy
+    restart: unless-stopped
+    depends_on:
+      - client
+      - api-service
+      - auth-service
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - taskmanagement-network
+
+networks:
+  taskmanagement-network:
+    driver: bridge
+
+volumes:
+  sqlserver-data:
+  caddy_data:
+  caddy_config:
