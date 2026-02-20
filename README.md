@@ -41,9 +41,23 @@ cp .env.example .env
 docker compose up -d --pull always
 ```
 
-4. Open [https://app.localhost](https://app.localhost)
+4. Trust Caddy local certificate (one-time setup):
 
-5. Login with one of the default users:
+macOS:
+
+```bash
+./scripts/setup-local-trust.sh
+```
+
+Windows (PowerShell as Administrator):
+
+```powershell
+./scripts/setup-local-trust.ps1
+```
+
+5. Open [https://app.localhost](https://app.localhost)
+
+6. Login with one of the default users:
 
 - `demo-admin@example.com`
 - `demo-manager@example.com`
@@ -66,7 +80,20 @@ Password is `DEMO_PASSWORD` from your `.env`.
 
 ## Troubleshooting
 
-- If `*.localhost` cert trust warning appears first time, accept local cert trust prompt from browser or Caddy local CA tooling.
+- If `*.localhost` cert trust warning appears, run:
+
+macOS:
+
+```bash
+./scripts/setup-local-trust.sh
+```
+
+Windows (PowerShell as Administrator):
+
+```powershell
+./scripts/setup-local-trust.ps1
+```
+
 - Check status:
 
 ```bash
