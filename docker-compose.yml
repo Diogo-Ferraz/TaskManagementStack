@@ -76,6 +76,8 @@ services:
         condition: service_healthy
       auth-service:
         condition: service_healthy
+    extra_hosts:
+      - "auth.localhost:host-gateway"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ASPNETCORE_URLS: http://+:8080
@@ -134,7 +136,11 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     networks:
-      - taskmanagement-network
+      taskmanagement-network:
+        aliases:
+          - app.localhost
+          - api.localhost
+          - auth.localhost
 
 networks:
   taskmanagement-network:
