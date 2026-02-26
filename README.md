@@ -8,7 +8,7 @@ This repo is intentionally separate from:
 
 ## What this runs
 
-- SQL Server
+- PostgreSQL
 - Auth service (.NET / OpenIddict)
 - API service (.NET)
 - Angular SPA client
