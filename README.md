@@ -1,10 +1,25 @@
 # TaskManagementStack
 
-Orchestration repo for running the full Task Management stack with one command.
+Deployment and orchestration repository for the full Task Management platform.
 
-This repo is intentionally separate from:
-- `TaskManagementServer` (backend source)
-- `TaskManagementClient` (frontend source)
+This repository runs the deployed stack for:
+- Client: [TaskManagementClient](https://github.com/Diogo-Ferraz/TaskManagementClient)
+- Server: [TaskManagementServer](https://github.com/Diogo-Ferraz/TaskManagementServer)
+
+## Live Website
+
+- App: [https://app.144.24.250.76.nip.io/](https://app.144.24.250.76.nip.io/)
+
+## Demo Accounts
+
+- `demo-admin@example.com` - `Administrator` role
+- `demo-manager@example.com` - `ProjectManager` role
+- `demo-user@example.com` - `User` role
+
+Password for all accounts:
+- `Demo123!`
+
+Each account has role-specific access and permissions in the UI and API.
 
 ## What this runs
 
@@ -57,13 +72,7 @@ Windows (PowerShell as Administrator):
 
 5. Open [https://app.localhost](https://app.localhost)
 
-6. Login with one of the default users:
-
-- `demo-admin@example.com`
-- `demo-manager@example.com`
-- `demo-user@example.com`
-
-Password is `DEMO_PASSWORD` from your `.env`.
+6. Login with one of the demo accounts listed above.
 
 ## Architecture Notes
 
