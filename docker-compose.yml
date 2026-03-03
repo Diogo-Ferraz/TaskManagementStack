@@ -9,8 +9,6 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     networks:
       - taskmanagement-network
     healthcheck:
@@ -29,25 +27,27 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__TaskManagementDbConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-taskmanagement};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres};
-      OpenIddict__Issuer: https://auth.localhost
-      OpenIddict__Audience: task_management_api_dev
+      OpenIddict__Issuer: ${AUTH_ISSUER:-https://auth.localhost}
+      OpenIddict__Audience: ${OPENIDDICT_AUDIENCE:-task_management_api_dev}
       OpenIddict__EncryptionKey: ${OPENIDDICT_ENCRYPTION_KEY:-DRjd/GnduI3Efzen9V9BvbNUfc/VKgXltV7Kbk9sMkY=}
-      DemoData__Enabled: true
+      DemoData__Enabled: ${DEMO_DATA_ENABLED:-true}
       DemoData__DefaultPassword: ${DEMO_PASSWORD:-Demo123!}
       ClientSettings__Clients__0__ClientId: swagger-client
+      ClientSettings__Clients__0__ClientType: confidential
       ClientSettings__Clients__0__DisplayName: Swagger Client application
-      ClientSettings__Clients__0__RedirectUris__0: https://api.localhost/swagger/oauth2-redirect.html
-      ClientSettings__Clients__0__PostLogoutRedirectUris__0: https://api.localhost/callback/logout/local
-      ClientSettings__Clients__0__AllowedCorsOrigins__0: https://api.localhost
+      ClientSettings__Clients__0__RedirectUris__0: ${API_BASE_URL:-https://api.localhost}/swagger/oauth2-redirect.html
+      ClientSettings__Clients__0__PostLogoutRedirectUris__0: ${API_BASE_URL:-https://api.localhost}/callback/logout/local
+      ClientSettings__Clients__0__AllowedCorsOrigins__0: ${API_BASE_URL:-https://api.localhost}
       ClientSettings__Clients__0__AllowedScopes__0: api1
       ClientSettings__Clients__1__ClientId: angular-client
+      ClientSettings__Clients__1__ClientType: public
       ClientSettings__Clients__1__DisplayName: Angular Client application
-      ClientSettings__Clients__1__RedirectUris__0: https://app.localhost/callback
-      ClientSettings__Clients__1__PostLogoutRedirectUris__0: https://app.localhost
-      ClientSettings__Clients__1__AllowedCorsOrigins__0: https://app.localhost
+      ClientSettings__Clients__1__RedirectUris__0: ${APP_BASE_URL:-https://app.localhost}/callback
+      ClientSettings__Clients__1__PostLogoutRedirectUris__0: ${APP_BASE_URL:-https://app.localhost}
+      ClientSettings__Clients__1__AllowedCorsOrigins__0: ${APP_BASE_URL:-https://app.localhost}
       ClientSettings__Clients__1__AllowedScopes__0: api1
     networks:
       - taskmanagement-network
@@ -68,19 +68,17 @@ services:
         condition: service_healthy
       auth-service:
         condition: service_healthy
-    extra_hosts:
-      - "auth.localhost:host-gateway"
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__TaskManagementDbConnection: Host=postgres;Port=5432;Database=${POSTGRES_DB:-taskmanagement};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-postgres};
-      OpenIddict__Issuer: https://auth.localhost
-      OpenIddict__Audience: task_management_api_dev
+      OpenIddict__Issuer: ${AUTH_ISSUER:-https://auth.localhost}
+      OpenIddict__Audience: ${OPENIDDICT_AUDIENCE:-task_management_api_dev}
       OpenIddict__EncryptionKey: ${OPENIDDICT_ENCRYPTION_KEY:-DRjd/GnduI3Efzen9V9BvbNUfc/VKgXltV7Kbk9sMkY=}
-      DemoData__Enabled: true
-      AuthApi__BaseUrl: https://auth.localhost/
-      ClientSettings__AuthorizationUrl: https://auth.localhost/connect/authorize
-      ClientSettings__TokenUrl: https://auth.localhost/connect/token
+      DemoData__Enabled: ${DEMO_DATA_ENABLED:-true}
+      AuthApi__BaseUrl: ${AUTH_INTERNAL_BASE_URL:-http://auth-service:8080/}
+      ClientSettings__AuthorizationUrl: ${AUTH_ISSUER:-https://auth.localhost}/connect/authorize
+      ClientSettings__TokenUrl: ${AUTH_ISSUER:-https://auth.localhost}/connect/token
       ClientSettings__Clients__0__ClientId: swagger-client
       ClientSettings__Clients__0__ClientSecret: ${SWAGGER_CLIENT_SECRET:-901564A5-E7FE-42CB-B10D-61EF6A8F3654}
       ClientSettings__Clients__0__RequirePkce: true
@@ -88,14 +86,14 @@ services:
       ClientSettings__Clients__0__Scopes__profile: Access your profile information
       ClientSettings__Clients__0__Scopes__email: Access your email address
       ClientSettings__Clients__0__Scopes__roles: Access your role information
-      ClientSettings__Clients__0__AllowedCorsOrigins__0: https://api.localhost
+      ClientSettings__Clients__0__AllowedCorsOrigins__0: ${API_BASE_URL:-https://api.localhost}
       ClientSettings__Clients__1__ClientId: angular-client
       ClientSettings__Clients__1__Description: Angular SPA client
       ClientSettings__Clients__1__RequirePkce: true
       ClientSettings__Clients__1__Scopes__profile: Access your profile information
       ClientSettings__Clients__1__Scopes__email: Access your email address
       ClientSettings__Clients__1__Scopes__roles: Access your role information
-      ClientSettings__Clients__1__AllowedCorsOrigins__0: https://app.localhost
+      ClientSettings__Clients__1__AllowedCorsOrigins__0: ${APP_BASE_URL:-https://app.localhost}
     networks:
       - taskmanagement-network
     healthcheck:
@@ -106,10 +104,14 @@ services:
       start_period: 40s
 
   client:
-    image: ${CLIENT_IMAGE:-diogopro/taskmanagement-client:latest}
+    image: ${CLIENT_IMAGE:-diogopro/taskmanagement-client:localhost}
     pull_policy: always
     container_name: tm-client
     restart: unless-stopped
+    environment:
+      APP_BASE_URL: ${APP_BASE_URL:-https://app.localhost}
+      API_BASE_URL: ${API_BASE_URL:-https://api.localhost}
+      AUTH_ISSUER: ${AUTH_ISSUER:-https://auth.localhost}
     networks:
       - taskmanagement-network
 
@@ -121,19 +123,12 @@ services:
       - client
       - api-service
       - auth-service
-    ports:
-      - "80:80"
-      - "443:443"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${CADDYFILE_PATH:-./Caddyfile.local}:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
     networks:
-      taskmanagement-network:
-        aliases:
-          - app.localhost
-          - api.localhost
-          - auth.localhost
+      - taskmanagement-network
 
 networks:
   taskmanagement-network:

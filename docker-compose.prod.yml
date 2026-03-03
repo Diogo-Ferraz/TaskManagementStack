@@ -1,0 +1,11 @@
+services:
+  caddy:
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      taskmanagement-network:
+        aliases:
+          - ${APP_HOST}
+          - ${API_HOST}
+          - ${AUTH_HOST}

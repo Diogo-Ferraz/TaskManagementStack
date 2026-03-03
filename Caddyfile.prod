@@ -1,0 +1,14 @@
+# Public full-stack entrypoints
+# Certificates are managed automatically by Caddy/Let's Encrypt.
+
+{$APP_HOST} {
+  reverse_proxy client:80
+}
+
+{$AUTH_HOST} {
+  reverse_proxy auth-service:8080
+}
+
+{$API_HOST} {
+  reverse_proxy api-service:8080
+}

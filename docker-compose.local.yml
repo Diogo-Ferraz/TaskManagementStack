@@ -1,0 +1,19 @@
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+
+  api-service:
+    extra_hosts:
+      - "auth.localhost:host-gateway"
+
+  caddy:
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      taskmanagement-network:
+        aliases:
+          - app.localhost
+          - api.localhost
+          - auth.localhost

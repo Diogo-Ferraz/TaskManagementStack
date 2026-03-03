@@ -1,0 +1,17 @@
+# Local full-stack entrypoints
+# Caddy will issue local dev certs via `tls internal`.
+
+app.localhost {
+  reverse_proxy client:80
+  tls internal
+}
+
+auth.localhost {
+  reverse_proxy auth-service:8080
+  tls internal
+}
+
+api.localhost {
+  reverse_proxy api-service:8080
+  tls internal
+}

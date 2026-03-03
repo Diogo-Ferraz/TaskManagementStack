@@ -29,7 +29,7 @@ Each account has role-specific access and permissions in the UI and API.
 - Angular SPA client
 - Caddy reverse proxy (single HTTPS entrypoint)
 
-## Hostnames
+## Local Hostnames
 
 - [https://app.localhost](https://app.localhost) - SPA
 - [https://api.localhost](https://api.localhost) - API
@@ -40,23 +40,21 @@ Each account has role-specific access and permissions in the UI and API.
 - Docker Desktop (or Docker Engine + Compose plugin)
 - Ports `80` and `443` available
 
-## Quick start
+## Local Setup
 
-1. Copy env file:
-
-```bash
-cp .env.example .env
-```
-
-2. Update image tags in `.env` if you want to pin a specific version.
-
-3. Start stack:
+1. Copy environment file:
 
 ```bash
-docker compose up -d --pull always
+cp .env.example .env.local
 ```
 
-4. Trust Caddy local certificate (one-time setup):
+2. Start stack with local overlay:
+
+```bash
+./scripts/up-local.sh
+```
+
+3. Trust Caddy local certificate (one-time setup):
 
 macOS:
 
@@ -70,47 +68,33 @@ Windows (PowerShell as Administrator):
 ./scripts/setup-local-trust.ps1
 ```
 
-5. Open [https://app.localhost](https://app.localhost)
+4. Open [https://app.localhost](https://app.localhost)
 
-6. Login with one of the demo accounts listed above.
+5. Login with one of the demo accounts listed above.
 
 ## Architecture Notes
 
 - Services are independent containers connected through Docker network.
-- Caddy acts as the only edge reverse proxy.
+- Caddy acts as the edge reverse proxy.
 - SPA uses OpenID Connect Authorization Code + PKCE via auth service.
 - API is protected and validated against OpenIddict issuer.
 
 ## Recommended release flow
 
-- Frontend repo CI builds and pushes `taskmanagement-client` image.
+- Frontend repo CI builds and pushes `taskmanagement-client` images.
 - Backend repo CI builds and pushes `taskmanagement-api` and `taskmanagement-auth` images.
-- This stack repo only updates image tags for release versions.
+- This stack repo only updates image tags and environment files for release versions.
 
 ## Troubleshooting
-
-- If `*.localhost` cert trust warning appears, run:
-
-macOS:
-
-```bash
-./scripts/setup-local-trust.sh
-```
-
-Windows (PowerShell as Administrator):
-
-```powershell
-./scripts/setup-local-trust.ps1
-```
 
 - Check status:
 
 ```bash
-docker compose ps
+docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml ps
 ```
 
 - Inspect logs:
 
 ```bash
-docker compose logs -f caddy auth-service api-service client
+docker compose --env-file .env.local -f docker-compose.yml -f docker-compose.local.yml logs -f caddy auth-service api-service client
 ```
