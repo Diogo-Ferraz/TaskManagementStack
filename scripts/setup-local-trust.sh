@@ -19,12 +19,16 @@ cert_path="/tmp/caddy-local-root.crt"
 echo "Ensuring Caddy container is running..."
 (
   cd "${stack_dir}"
-  docker compose up -d caddy >/dev/null
+  docker compose \
+    --env-file .env.local \
+    -f docker-compose.yml \
+    -f docker-compose.local.yml \
+    up -d caddy >/dev/null
 )
 
 if ! docker ps --format '{{.Names}}' | grep -qx "tm-caddy"; then
   echo "Could not find running container 'tm-caddy'."
-  echo "Start the stack first with: docker compose up -d --pull always"
+  echo "Start the stack first with: ./scripts/up-local.sh"
   exit 1
 fi
 
