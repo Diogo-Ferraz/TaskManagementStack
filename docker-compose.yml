@@ -36,7 +36,8 @@ services:
       DemoData__Enabled: ${DEMO_DATA_ENABLED:-true}
       DemoData__DefaultPassword: ${DEMO_PASSWORD:-Demo123!}
       ClientSettings__Clients__0__ClientId: swagger-client
-      ClientSettings__Clients__0__ClientType: confidential
+      ClientSettings__Clients__0__ClientType: ${SWAGGER_CLIENT_TYPE:-confidential}
+      ClientSettings__Clients__0__ClientSecret: ${SWAGGER_CLIENT_SECRET:-901564A5-E7FE-42CB-B10D-61EF6A8F3654}
       ClientSettings__Clients__0__DisplayName: Swagger Client application
       ClientSettings__Clients__0__RedirectUris__0: ${API_BASE_URL:-https://api.localhost}/swagger/oauth2-redirect.html
       ClientSettings__Clients__0__PostLogoutRedirectUris__0: ${API_BASE_URL:-https://api.localhost}/callback/logout/local
